@@ -2,8 +2,15 @@
   "name": "coresys/user-management",
   "type": "bundle",
   "license": "MIT",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://CoreSys@bitbucket.org/jlcoresys/reverse-discriminator.git"
+    }
+  ],
   "require": {
     "php": "^7.2.5",
+    "coresys/reverse-discriminator": "dev-master",
     "ext-ctype": "*",
     "ext-iconv": "*",
     "symfony/console": "5.1.*",
