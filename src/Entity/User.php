@@ -8,6 +8,7 @@ declare( strict_types = 1 );
 
 namespace CoreSys\UserManagement\Entity;
 
+use CoreSys\ReverseDiscriminator\Annotations\DiscriminatorEntry;
 use CoreSys\UserManagement\Entity\Traits\Id;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -17,21 +18,25 @@ use Doctrine\ORM\Mapping as ORM;
  * Class User
  * @package CoreSys\UserManagement\Entity
  * @ORM\Entity()
- * @ORM\Table(name="cs_user")
- * @ORM\DiscriminatorColumn(name="discr", type="string")
- * @ORM\DiscriminatorMap({
- *     "base"="CoreSys\UserManagement\Entity\User"
- *     })
- * @ORM\EntityListeners({"CoreSys\UserManagement\Entity\Listeners\UserListener"})
+ * @ORM\Table(name="cs_user", indexes={@ORM\Index(name="password_idx", columns={"password"})})
+ * @ORM\InheritanceType("SINGLE_TABLE")
+ * @ORM\DiscriminatorColumn(name="discr", type="string", length=32)
+ * @DiscriminatorEntry("user")
  */
 class User implements UserInterface
 {
 
-    use Id;
+    /**
+     * @var string
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id()
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
 
     /**
      * @var string
-     * @ORM\Column(name="email", length=128)
+     * @ORM\Column(name="email", length=128, unique=true)
      */
     protected $email;
 
@@ -73,6 +78,15 @@ class User implements UserInterface
     {
         $this->setSalt( base_convert( sha1( uniqid( mt_rand( 1, 9999999999 ) . '', TRUE ) ), 16, 36 ) );
         $this->setRoles( [ 'ROLE_USER' ] );
+    }
+
+    /**
+     * Get Id
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->id;
     }
 
     /**

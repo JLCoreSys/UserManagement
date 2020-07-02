@@ -13,6 +13,8 @@ use CoreSys\UserManagement\Entity\Role;
 use CoreSys\UserManagement\Manager\Traits\ConfigurationYaml;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Yaml\Yaml;
@@ -35,41 +37,14 @@ class RoleManager extends AbstractManager
      * @param KernelInterface $kernel
      * @param array           $config
      */
-    public function __construct( KernelInterface $kernel, array $config = [] )
+    public function __construct( KernelInterface $kernel,
+                                 ContainerInterface $container,
+                                 EntityManagerInterface $entityManager )
     {
-        $this->configuration = $config;
-        $this->setKernel( $kernel )
-            ->setFile( $this->getConfigurationFile( 'roles.yaml' ) )
-            ->setup();
-    }
-
-    /**
-     * @return RoleManager
-     */
-    protected function setup(): RoleManager
-    {
-        $repo = NULL; // @todo
-        $roles = [ 'User' => NULL, 'Member' => NULL, 'Admin' => NULL, 'Super Admin' => NULL ];
-        $previous = NULL;
-
-        foreach ( $roles as $roleName => $role ) {
-            $role = $repo->findOneBy( [ 'name' => $roleName ] );
-            if ( !$role instanceof Role ) {
-                $role = ( new Role() )
-                    ->setMandatory( TRUE )
-                    ->setName( $roleName );
-
-                if ( $previous instanceof Role ) {
-                    $role->setParent( $previous );
-                }
-
-                // @todo persist and flush
-            }
-
-            $previous = $role;
-        }
-
-        return $this;
+        $this->container = $container;
+        $this->kernel = $kernel;
+        $this->entityManager = $entityManager;
+        $this->setFile( $this->getConfigurationFile( 'roles.yaml' ) );
     }
 
     /**
@@ -150,6 +125,9 @@ class RoleManager extends AbstractManager
             return NULL;
         }
 
+        dump( $yaml );
+        exit;
+
         return $yaml ? Yaml::dump( $hier, 1 ) : $hier;
     }
 
@@ -174,15 +152,15 @@ class RoleManager extends AbstractManager
     /**
      * Update the roles
      *
-     * @param EntityInterface $entity
+     * @param Role $role
      * @return RoleManager
      */
-    public function update( EntityInterface &$entity )
+    public function update( Role &$role )
     {
-        $entity = $entity ?? new Role();
-        $entity->setRoleName(
+        $role = $role ?? new Role();
+        $role->setRoleName(
             "ROLE_" . strtoupper(
-                str_replace( ' ', '_', trim( $entity->getName() )
+                str_replace( ' ', '_', trim( $role->getName() )
                 )
             )
         );

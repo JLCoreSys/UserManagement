@@ -20,11 +20,6 @@ trait ConfigurationYaml
     protected $file;
 
     /**
-     * @var KernelInterface|null
-     */
-    protected $kernel;
-
-    /**
      * @return $this
      */
     public function dumpYaml(): self
@@ -34,15 +29,17 @@ trait ConfigurationYaml
         }
 
         $yaml = $this->getDataStructure( TRUE );
+        dump( $yaml );
+        exit;
 
         return $this->writeYamlToFile( $yaml );
     }
 
     /**
-     * @param $yaml
+     * @param mixed $yaml
      * @return $this
      */
-    public function writeYamlToFile( ?$yaml ): self
+    public function writeYamlToFile( $yaml = NULL ): self
     {
         if ( $yaml === NULL ) {
             $fp = fopen( $this->getFile(), 'w+' );
@@ -96,27 +93,6 @@ trait ConfigurationYaml
             $filename
         ] );
 
-    }
-
-    /**
-     * Get Kernel
-     * @return null|KernelInterface
-     */
-    public function getKernel(): ?KernelInterface
-    {
-        return $this->kernel;
-    }
-
-    /**
-     * Set Kernel
-     * @param null|KernelInterface $kernel
-     * @return $this
-     */
-    public function setKernel( ?KernelInterface $kernel ): self
-    {
-        $this->kernel = $kernel;
-
-        return $this;
     }
 
 }

@@ -1,8 +1,22 @@
 parameters:
 
 services:
-  CoreSys\UserManagement\Entity\Manager\:
-    resource: '../../Entity/Manager'
+  CoreSys\UserManagement\Manager\UserManager:
+    class: CoreSys\UserManagement\Manager\UserManager
+    arguments: [ '@Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface' ]
 
-  CoreSys\UserManagement\Entity\Listeners\:
-    resource: '../../Entity/Listeners'
+  CoreSys\UserManagement\Manager\RoleManager:
+    class: CoreSys\UserManagement\Manager\RoleManager
+    arguments: [ '@kernel', '@service_container', '@doctrine.orm.default_entity_manager' ]
+
+  CoreSys\UserManagement\Subscribers\UserEntitySubscriber:
+    class: CoreSys\UserManagement\Subscribers\UserEntitySubscriber
+    tags:
+        - { name: 'doctrine.event_subscriber' }
+    arguments: [ '@CoreSys\UserManagement\Manager\UserManager' ]
+
+  CoreSys\UserManagement\Subscribers\RoleEntitySubscriber:
+    class: CoreSys\UserManagement\Subscribers\RoleEntitySubscriber
+    tags:
+        - { name: 'doctrine.event_subscriber' }
+    arguments: [ '@CoreSys\UserManagement\Manager\RoleManager' ]

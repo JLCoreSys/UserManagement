@@ -18,55 +18,52 @@ use Doctrine\ORM\Mapping as ORM;
  * @package CoreSys\UserManagement\Entity
  * @ORM\Entity()
  * @ORM\Table(name="cs_access")
- * @ORM\EntityListeners({"CoreSys\UserManagement\Entity\Listeners\AccessListener"})
  */
 class Access
 {
-    use Id;
-
+    /**
+     * @var string
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id()
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
     /**
      * @var string
      * @ORM\Column(length=255, unique=true)
      */
     protected $path;
-
     /**
      * @var Collection
      * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\Role", inversedBy="access", cascade={"persist"})
      * @ORM\JoinTable(name="cs_access_roles")
      */
     protected $roles;
-
     /**
      * @var bool
      * @ORM\Column(type="boolean")
      */
     protected $active;
-
     /**
      * @var string|null
      * @ORM\Column(length=255, nullable=true)
      */
     protected $host;
-
     /**
      * @var string|null
      * @ORM\Column(length=32, nullable=true)
      */
     protected $ip;
-
     /**
      * @var bool
      * @ORM\Column(type="boolean")
      */
     protected $anonymous;
-
     /**
      * @var array
      * @ORM\Column(type="array")
      */
     protected $methods;
-
     /**
      * @var string|null
      * @ORM\Column(length=32, nullable=true)
@@ -82,6 +79,15 @@ class Access
         $this->anonymous = FALSE;
         $this->roles = new ArrayCollection();
         $this->methods = [ 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS' ];
+    }
+
+    /**
+     * Get Id
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->id;
     }
 
     /**

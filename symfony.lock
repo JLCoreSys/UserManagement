@@ -1,4 +1,22 @@
 {
+    "antishov/doctrine-extensions-bundle": {
+        "version": "1.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "1.4",
+            "ref": "6c1ceb662f8997085f739cd089bfbef67f245983"
+        },
+        "files": [
+            "config/packages/stof_doctrine_extensions.yaml"
+        ]
+    },
+    "behat/transliterator": {
+        "version": "v1.3.0"
+    },
+    "coresys/reverse-discriminator": {
+        "version": "dev-master"
+    },
     "doctrine/annotations": {
         "version": "1.0",
         "recipe": {
@@ -77,6 +95,9 @@
     },
     "doctrine/sql-formatter": {
         "version": "1.1.0"
+    },
+    "gedmo/doctrine-extensions": {
+        "version": "v2.4.x-dev"
     },
     "ocramius/package-versions": {
         "version": "1.5.1"
@@ -189,6 +210,9 @@
     },
     "symfony/orm-pack": {
         "version": "v1.0.8"
+    },
+    "symfony/polyfill-ctype": {
+        "version": "v1.17.1"
     },
     "symfony/polyfill-intl-grapheme": {
         "version": "v1.17.1"

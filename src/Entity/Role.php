@@ -18,67 +18,62 @@ use Doctrine\ORM\Mapping as ORM;
  * @package CoreSys\UserManagement\Entity
  * @ORM\Entity()
  * @ORM\Table(name="cs_roles")
- * @ORM\EntityListeners({"CoreSys\UserManagement\Entity\Listeners\RoleListener"})
  */
 class Role
 {
-    use Id;
-
+    /**
+     * @var string
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id()
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    protected $id;
     /**
      * @var string
      * @ORM\Column(length=32, unique=true)
      */
     protected $name;
-
     /**
      * @var string
      * @ORM\Column(length=32, unique=true)
      */
     protected $roleName;
-
     /**
      * @var bool
      * @ORM\Column(type="boolean")
      */
     protected $mandatory;
-
     /**
      * @var bool
      * @ORM\Column(type="boolean")
      */
     protected $active;
-
     /**
      * @var Role|null
      * @ORM\ManyToOne(targetEntity="CoreSys\UserManagement\Entity\Role", inversedBy="children", cascade={"persist"})
      * @ORM\JoinColumn(name="parent_id", referencedColumnName="id", nullable=true, onDelete="SET NULL")
      */
     protected $parent;
-
     /**
      * @var Collection
      * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\Role", mappedBy="parent")
      */
     protected $children;
-
     /**
      * @var Collection
      * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\Access", mappedBy="roles")
      */
     protected $access;
-
     /**
      * @var Collection
      * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\User", mappedBy="systemRoles")
      */
     protected $users;
-
     /**
      * @var string
      * @ORM\Column(length=12)
      */
     protected $color;
-
     /**
      * @var bool
      * @ORM\Column(type="boolean")
@@ -97,6 +92,15 @@ class Role
         $this->active = TRUE;
         $this->color = '#428BCA';
         $this->switch = FALSE;
+    }
+
+    /**
+     * Get Id
+     * @return string
+     */
+    public function getId(): string
+    {
+        return $this->id;
     }
 
     /**
@@ -195,9 +199,9 @@ class Role
 
     /**
      * Get Name
-     * @return string
+     * @return string|null
      */
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
@@ -216,9 +220,9 @@ class Role
 
     /**
      * Get RoleName
-     * @return string
+     * @return string|null
      */
-    public function getRoleName(): string
+    public function getRoleName(): ?string
     {
         return $this->roleName;
     }

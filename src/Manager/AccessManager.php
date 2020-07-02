@@ -17,11 +17,18 @@ use CoreSys\UserManagement\Entity\EntityInterface;
 class AccessManager extends AbstractManager
 {
     /**
+     * @param EntityInterface $entity
+     */
+    public function remove( EntityInterface &$entity )
+    {
+        // TODO: Implement remove() method.
+    }
+
+    /**
      * @param EntityInterface $entity The Access entity
      */
     public function update( EntityInterface &$entity )
     {
         // TODO: Implement update() method.
     }
-
 }
