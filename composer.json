@@ -8,6 +8,7 @@
       "url": "https://CoreSys@bitbucket.org/jlcoresys/reverse-discriminator.git"
     }
   ],
+  "minimum-stability": "dev",
   "require": {
     "php": "^7.2.5",
     "coresys/reverse-discriminator": "dev-master",
