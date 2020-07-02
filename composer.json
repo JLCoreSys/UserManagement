@@ -1,6 +1,7 @@
 {
-  "type": "project",
-  "license": "proprietary",
+  "name": "coresys/user-management",
+  "type": "bundle",
+  "license": "MIT",
   "require": {
     "php": "^7.2.5",
     "ext-ctype": "*",
