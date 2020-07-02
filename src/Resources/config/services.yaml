@@ -1,3 +1,5 @@
 parameters:
 
 services:
+  CoreSys\UserManagement\Entity\Listeners:
+    resource: '../../Entity/Listeners'

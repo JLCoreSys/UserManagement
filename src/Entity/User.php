@@ -71,7 +71,7 @@ class User implements UserInterface
      */
     public function __construct()
     {
-        $this->setSalt( base_convert( sha1( uniqid( mt_rand(), TRUE ) ), 16, 36 ) );
+        $this->setSalt( base_convert( sha1( uniqid( mt_rand( 1, 9999999999 ) . '', TRUE ) ), 16, 36 ) );
         $this->setRoles( [ 'ROLE_USER' ] );
     }
 
