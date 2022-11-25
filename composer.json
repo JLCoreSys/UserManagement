@@ -21,7 +21,7 @@
     "symfony/framework-bundle": "6.1.*",
     "symfony/orm-pack": "^1.0",
     "symfony/security-bundle": "6.1.*",
-    "symfony/yaml": "^6.1.*"
+    "symfony/yaml": "6.1.*"
   },
   "require-dev": {
   },
