@@ -6,19 +6,19 @@ parameters:
         - {email: 'member@localhost.dev', password: 'password', roles: ['ROLE_MEMBER']}
         - {email: 'admin@localhost.dev', password: 'password', roles: ['ROLE_ADMIN']}
         - {email: 'super.admin@localhost.dev', password: 'password', roles: ['ROLE_SUPER_ADMIN']}
-      roles:
-        - {name: 'User', mandatory: true}
-        - {name: 'Member', inherits: ['User']}
-        - {name: 'Admin', mandatory: true, inherits: ['Member']}
-        - {name: 'Dev', mandatory: true, inherits: ['Admin'], switch: true}
-        - {name: 'Super Admin', mandatory: true, inherits: ['Admin', 'Dev'], switch: true}
-      access:
-        - {path: '^/', public: true, mandatory: true}
-        - {path: '^/(login|logout)', public: true}
-        - {path: '^/members', roles: ['ROLE_MEMBER'], enabled: true}
-        - {path: '^/admin', roles: ['ROLE_ADMIN'], mandatory: true}
-        - {path: '^/admin/(login|logout)', public: true, mandatory: true}
-        - {path: '^/admin/super', roles: ['ROLE_SUPER_ADMIN'], enabled: false}
+      # roles:
+      #   - {name: 'User', mandatory: true}
+      #   - {name: 'Member', inherits: ['User']}
+      #   - {name: 'Admin', mandatory: true, inherits: ['Member']}
+      #   - {name: 'Dev', mandatory: true, inherits: ['Admin'], switch: true}
+      #   - {name: 'Super Admin', mandatory: true, inherits: ['Admin', 'Dev'], switch: true}
+      # access:
+      #   - {path: '^/', public: true, mandatory: true}
+      #   - {path: '^/(login|logout)', public: true}
+      #   - {path: '^/members', roles: ['ROLE_MEMBER'], enabled: true}
+      #   - {path: '^/admin', roles: ['ROLE_ADMIN'], mandatory: true}
+      #   - {path: '^/admin/(login|logout)', public: true, mandatory: true}
+      #   - {path: '^/admin/super', roles: ['ROLE_SUPER_ADMIN'], enabled: false}
 
 services:
   CoreSys\UserManagement\Manager\SecurityManager:

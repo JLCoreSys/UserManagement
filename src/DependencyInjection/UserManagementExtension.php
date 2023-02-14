@@ -9,10 +9,14 @@ declare(strict_types=1);
 
 namespace CoreSys\UserManagement\DependencyInjection;
 
+use CoreSys\UserManagement\UserManagementBundle;
+use Exception;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class UserManagementExtension
@@ -20,6 +24,8 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
  */
 class UserManagementExtension extends Extension
 {
+    public const FILENAME = 'coresys.yaml';
+
     /**
      * @param array            $configs
      * @param ContainerBuilder $container
@@ -27,22 +33,28 @@ class UserManagementExtension extends Extension
      */
     public function load(array $configs, ContainerBuilder $container)
     {
+        UserManagementBundle::install();
+
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $loader = new YamlFileLoader($container, new FileLocator(
-            implode(DIRECTORY_SEPARATOR, [
-                __DIR__,
-                '..',
-                'Resources',
-                'config'
-            ])
-        ));
+        $loader = new YamlFileLoader(
+            $container,
+            new FileLocator(
+                implode(DIRECTORY_SEPARATOR, [
+                    __DIR__,
+                    '..',
+                    'Resources',
+                    'config'
+                ])
+            )
+        );
 
         $loader->load('services.yaml');
 
-        $container->setParameter('coresys_user_management.fixtures.users', $config['fixtures']['users']);
-        $container->setParameter('coresys_user_management.fixtures.roles', $config['fixtures']['roles']);
-        $container->setParameter('coresys_user_management.fixtures.access', $config['fixtures']['access']);
+        $fixtures = $config['fixtures'] ?? [];
+        $container->setParameter('coresys_user_management.fixtures.users', $fixtures['users'] ?? []);
+        $container->setParameter('coresys_user_management.fixtures.roles', $fixtures['roles'] ?? []);
+        $container->setParameter('coresys_user_management.fixtures.access', $fixtures['access'] ?? []);
     }
 }
