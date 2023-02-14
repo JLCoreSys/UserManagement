@@ -1,10 +1,11 @@
 <?php
+
 /**
- * CoreSystems (c) 2020
+ * CoreSystems (c) 2023
  * Author: Josh McCreight<jmccreight@shaw.ca>
  */
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace CoreSys\UserManagement\DependencyInjection;
 
@@ -22,11 +23,9 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder( 'coresys_user_management' );
-
-        // @todo
+        $treeBuilder = new TreeBuilder('coresys_user_management');
+        $rootNode = $treeBuilder->getRootNode();
 
         return $treeBuilder;
     }
-
 }

@@ -1,10 +1,11 @@
 <?php
+
 /**
- * CoreSystems (c) 2020
+ * CoreSystems (c) 2023
  * Author: Josh McCreight<jmccreight@shaw.ca>
  */
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace CoreSys\UserManagement\DependencyInjection;
 
@@ -24,21 +25,24 @@ class UserManagementExtension extends Extension
      * @param ContainerBuilder $container
      * @throws \Exception
      */
-    public function load( array $configs, ContainerBuilder $container )
+    public function load(array $configs, ContainerBuilder $container)
     {
         $configuration = new Configuration();
-        $this->processConfiguration( $configuration, $configs );
+        $config = $this->processConfiguration($configuration, $configs);
 
-        $loader = new YamlFileLoader( $container, new FileLocator(
-            implode( DIRECTORY_SEPARATOR, [
+        $loader = new YamlFileLoader($container, new FileLocator(
+            implode(DIRECTORY_SEPARATOR, [
                 __DIR__,
                 '..',
                 'Resources',
                 'config'
-            ] )
-        ) );
+            ])
+        ));
 
-        $loader->load( 'services.yaml' );
+        $loader->load('services.yaml');
+
+        $container->setParameter('coresys_user_management.fixtures.users', $config['fixtures']['users']);
+        $container->setParameter('coresys_user_management.fixtures.roles', $config['fixtures']['roles']);
+        $container->setParameter('coresys_user_management.fixtures.access', $config['fixtures']['access']);
     }
-
 }

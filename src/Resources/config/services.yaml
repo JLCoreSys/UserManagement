@@ -1,22 +1,31 @@
 parameters:
+  coresys_core_management:
+    fixtures: 
+      users:
+        - {email: 'user@localhost.dev', password: 'password'}
+        - {email: 'member@localhost.dev', password: 'password', roles: ['ROLE_MEMBER']}
+        - {email: 'admin@localhost.dev', password: 'password', roles: ['ROLE_ADMIN']}
+        - {email: 'super.admin@localhost.dev', password: 'password', roles: ['ROLE_SUPER_ADMIN']}
+      roles:
+        - {name: 'User', mandatory: true}
+        - {name: 'Member', inherits: ['User']}
+        - {name: 'Admin', mandatory: true, inherits: ['Member']}
+        - {name: 'Dev', mandatory: true, inherits: ['Admin'], switch: true}
+        - {name: 'Super Admin', mandatory: true, inherits: ['Admin', 'Dev'], switch: true}
+      access:
+        - {path: '^/', public: true, mandatory: true}
+        - {path: '^/(login|logout)', public: true}
+        - {path: '^/members', roles: ['ROLE_MEMBER'], enabled: true}
+        - {path: '^/admin', roles: ['ROLE_ADMIN'], mandatory: true}
+        - {path: '^/admin/(login|logout)', public: true, mandatory: true}
+        - {path: '^/admin/super', roles: ['ROLE_SUPER_ADMIN'], enabled: false}
 
 services:
-  CoreSys\UserManagement\Manager\UserManager:
-    class: CoreSys\UserManagement\Manager\UserManager
-    arguments: [ '@Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface' ]
-
-  CoreSys\UserManagement\Manager\RoleManager:
-    class: CoreSys\UserManagement\Manager\RoleManager
-    arguments: [ '@kernel', '@service_container', '@doctrine.orm.default_entity_manager' ]
-
-  CoreSys\UserManagement\Subscribers\UserEntitySubscriber:
-    class: CoreSys\UserManagement\Subscribers\UserEntitySubscriber
-    tags:
-        - { name: 'doctrine.event_subscriber' }
-    arguments: [ '@CoreSys\UserManagement\Manager\UserManager' ]
-
-  CoreSys\UserManagement\Subscribers\RoleEntitySubscriber:
-    class: CoreSys\UserManagement\Subscribers\RoleEntitySubscriber
-    tags:
-        - { name: 'doctrine.event_subscriber' }
-    arguments: [ '@CoreSys\UserManagement\Manager\RoleManager' ]
+  CoreSys\UserManagement\Manager\SecurityManager:
+    autowire: true
+    class: CoreSys\UserManagement\Manager\SecurityManager
+    arguments: 
+      - '@Symfony\Component\HttpKernel\KernelInterface'
+      - '@Symfony\Component\Form\FormFactoryInterface'
+      - '@CoreSys\UserManagement\Repository\RoleRepository'
+      - '@CoreSys\UserManagement\Repository\AccessRepository'

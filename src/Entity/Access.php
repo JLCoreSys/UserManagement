@@ -1,293 +1,313 @@
 <?php
 /**
- * CoreSystems (c) 2020
+ * CoreSystems (c) 2023
  * Author: Josh McCreight<jmccreight@shaw.ca>
  */
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace CoreSys\UserManagement\Entity;
 
-use CoreSys\UserManagement\Entity\Traits\Id;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Class Access
  * @package CoreSys\UserManagement\Entity
- * @ORM\Entity()
- * @ORM\Table(name="cs_access")
  */
+#[ORM\Entity(repositoryClass: AccessRepository::class)]
+#[ORM\Table(name: 'cs_access_map')]
 class Access
 {
-    /**
-     * @var string
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id()
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
-    protected $id;
-    /**
-     * @var string
-     * @ORM\Column(length=255, unique=true)
-     */
-    protected $path;
-    /**
-     * @var Collection
-     * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\Role", inversedBy="access", cascade={"persist"})
-     * @ORM\JoinTable(name="cs_access_roles")
-     */
-    protected $roles;
-    /**
-     * @var bool
-     * @ORM\Column(type="boolean")
-     */
-    protected $active;
-    /**
-     * @var string|null
-     * @ORM\Column(length=255, nullable=true)
-     */
-    protected $host;
-    /**
-     * @var string|null
-     * @ORM\Column(length=32, nullable=true)
-     */
-    protected $ip;
-    /**
-     * @var bool
-     * @ORM\Column(type="boolean")
-     */
-    protected $anonymous;
-    /**
-     * @var array
-     * @ORM\Column(type="array")
-     */
-    protected $methods;
-    /**
-     * @var string|null
-     * @ORM\Column(length=32, nullable=true)
-     */
-    protected $channel;
+    public const METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'OPTION', 'LINK', 'UNLINK', 'HEAD'];
 
-    /**
-     * Access constructor.
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $path = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private array $ips = [];
+
+    #[ORM\Column(nullable: true)]
+    private ?int $port = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $host = null;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private array $methods = [];
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private array $attributes = [];
+
+    #[ORM\Column(length: 128, nullable: true)]
+    private ?string $route = null;
+
+    #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'access', cascade: ['persist'])]
+    #[ORM\JoinTable]
+    private Collection $roles;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $enabled = true;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $mandatory = false;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $public = false;
+
     public function __construct()
     {
-        $this->active = TRUE;
-        $this->anonymous = FALSE;
         $this->roles = new ArrayCollection();
-        $this->methods = [ 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS' ];
+        $this->methods = self::METHODS;
     }
 
-    /**
-     * Get Id
-     * @return string
-     */
-    public function getId(): string
+    public function isMandatory(): bool
     {
-        return $this->id;
+        return $this->mandatory;
     }
 
-    /**
-     * Get Path
-     * @return string
-     */
-    public function getPath(): string
+    public function setMandatory(bool $mandatory = false): self
     {
-        return $this->path;
-    }
-
-    /**
-     * Set Path
-     * @param string $path
-     * @return Access
-     */
-    public function setPath( string $path ): Access
-    {
-        $this->path = $path;
+        $this->mandatory = $mandatory;
 
         return $this;
     }
 
-    /**
-     * Get Roles
-     * @return Collection
-     */
+    public function isPublic(): bool
+    {
+        return $this->public ??= false;
+    }
+
+    public function setPublic(bool $public = false): self
+    {
+        $this->public = $public;
+
+        return $this;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled = true): self
+    {
+        $this->enabled = $enabled;
+
+        return $this;
+    }
+
     public function getRoles(): Collection
     {
         return $this->roles;
     }
 
-    /**
-     * Set Roles
-     * @param Collection $roles
-     * @return Access
-     */
-    public function setRoles( Collection $roles ): Access
+    public function setRoles(Collection $roles): self
     {
         $this->roles = $roles;
 
         return $this;
     }
 
-    /**
-     * Get Active
-     * @return bool
-     */
-    public function isActive(): bool
+    public function addRole(Role $role): self
     {
-        return $this->active;
-    }
-
-    /**
-     * Set Active
-     * @param bool $active
-     * @return Access
-     */
-    public function setActive( bool $active ): Access
-    {
-        $this->active = $active;
+        if (!$this->roles->contains($role)) {
+            $this->roles->add($role);
+            $role->addAccess($this);
+        }
 
         return $this;
     }
 
-    /**
-     * Get Host
-     * @return null|string
-     */
+    public function removeRole(Role $role): self
+    {
+        if ($this->roles->contains($role)) {
+            $this->roles->removeElement($role);
+            $role->removeAccess($this);
+        }
+
+        return $this;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getPath(): ?string
+    {
+        return $this->path;
+    }
+
+    public function setPath(string $path): self
+    {
+        $this->path = $path;
+
+        return $this;
+    }
+
+    public function getIps(): array
+    {
+        return $this->ips;
+    }
+
+    public function setIps(?array $ips = null): self
+    {
+        $this->ips = $ips ?? [];
+
+        return $this;
+    }
+
+    public function getPort(): ?int
+    {
+        return $this->port;
+    }
+
+    public function setPort(?int $port): self
+    {
+        $this->port = $port;
+
+        return $this;
+    }
+
     public function getHost(): ?string
     {
         return $this->host;
     }
 
-    /**
-     * Set Host
-     * @param null|string $host
-     * @return Access
-     */
-    public function setHost( ?string $host ): Access
+    public function setHost(?string $host): self
     {
         $this->host = $host;
 
         return $this;
     }
 
-    /**
-     * Get Ip
-     * @return null|string
-     */
-    public function getIp(): ?string
-    {
-        return $this->ip;
-    }
-
-    /**
-     * Set Ip
-     * @param null|string $ip
-     * @return Access
-     */
-    public function setIp( ?string $ip ): Access
-    {
-        $this->ip = $ip;
-
-        return $this;
-    }
-
-    /**
-     * Get Anonymous
-     * @return bool
-     */
-    public function isAnonymous(): bool
-    {
-        return $this->anonymous;
-    }
-
-    /**
-     * Set Anonymous
-     * @param bool $anonymous
-     * @return Access
-     */
-    public function setAnonymous( bool $anonymous ): Access
-    {
-        $this->anonymous = $anonymous;
-
-        return $this;
-    }
-
-    /**
-     * Get Methods
-     * @return array
-     */
     public function getMethods(): array
     {
         return $this->methods;
     }
 
-    /**
-     * Set Methods
-     * @param array $methods
-     * @return Access
-     */
-    public function setMethods( array $methods ): Access
+    public function setMethods(?array $methods): self
     {
-        $this->methods = $methods;
-
-        return $this;
-    }
-
-    /**
-     * Get Channel
-     * @return null|string
-     */
-    public function getChannel(): ?string
-    {
-        return $this->channel;
-    }
-
-    /**
-     * Set Channel
-     * @param null|string $channel
-     * @return Access
-     */
-    public function setChannel( ?string $channel ): Access
-    {
-        $this->channel = $channel;
-
-        return $this;
-    }
-
-    /**
-     * @param Role $role
-     * @return Access
-     */
-    public function addRole( Role $role ): Access
-    {
-        if ( !$this->roles->contains( $role ) ) {
-            // Add this access to the role
-            $role->addAccess( $this );
-
-            // Add the role to the roles list
-            $this->roles->add( $role );
+        $this->methods = [];
+        foreach ($methods as $method) {
+            $this->addMethod($method);
         }
 
         return $this;
     }
 
-    /**
-     * @param Role $role
-     * @return Access
-     */
-    public function removeRole( Role $role ): Access
+    public function addMethod(string $method): self
     {
-        // Remove this access from the role, regardless if its part of this Access or not
-        $role->removeAccess( $this );
-
-        if ( $this->roles->contains( $role ) ) {
-            $this->roles->removeElement( $role );
+        $method = trim(strtoupper($method));
+        if (
+            in_array($method, self::METHODS) &&
+            !in_array($method, $this->getMethods())
+        ) {
+            $this->methods[] = $method;
         }
 
         return $this;
+    }
+
+    public function removeMethod(string $method): self
+    {
+        $method = trim(strtoupper($method));
+        $this->setMethods(
+            array_filter(
+                $this->getMethods(),
+                function ($m) use ($method) {
+                    return $m !== $method;
+                }
+            )
+        );
+
+        return $this;
+    }
+
+    public function getAttributes(): array
+    {
+        return $this->attributes;
+    }
+
+    public function setAttributes(?array $attributes = null): self
+    {
+        $this->attributes = $attributes ?? [];
+
+        return $this;
+    }
+
+    public function getRoute(): ?string
+    {
+        return $this->route;
+    }
+
+    public function setRoute(?string $route): self
+    {
+        $this->route = $route;
+
+        return $this;
+    }
+
+    public function serialize(): array
+    {
+        $serialized = [];
+        $vars = get_class_vars(self::class);
+        foreach (array_keys($vars) as $var) {
+            if (method_exists($this, $method = sprintf('get%s', ucfirst($var)))) {
+                $serialized[$var] = $this->$method();
+            } elseif (method_exists($this, $method = sprintf('is%s', ucfirst($var)))) {
+                $serialized[$var] = $this->$method();
+            }
+        }
+
+        return $serialized;
+    }
+
+    public function output(): ?array
+    {
+        if (!($data = $this->serialize())['enabled']) {
+            return null;
+        }
+
+        unset($data['id']);
+        unset($data['enabled']);
+        unset($data['mandatory']);
+
+        $roles = [];
+        foreach ($data['roles'] ?? [] as $role) {
+            $roles[] = (string) $role;
+        }
+        $data['roles'] = $roles;
+
+        if ($data['public']) {
+            $data['roles'][] = 'PUBLIC_ACCESS';
+        }
+        unset($data['public']);
+
+        foreach ($data as $key => $val) {
+            if (null === $val || (is_array($val) && count($val) === 0)) {
+                unset($data[$key]);
+            }
+        }
+
+        return $data;
+    }
+
+    public function hasRoleName(string $roleName): bool
+    {
+        return in_array($roleName, ($this->output() ?? [])['roles'] ?? []);
+    }
+
+    public function hasRole(Role $role): bool
+    {
+        return $this->hasRoleName($role->getRoleName());
     }
 }

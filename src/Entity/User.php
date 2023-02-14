@@ -1,106 +1,218 @@
 <?php
 /**
- * CoreSystems (c) 2020
+ * CoreSystems (c) 2023
  * Author: Josh McCreight<jmccreight@shaw.ca>
  */
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace CoreSys\UserManagement\Entity;
 
 use CoreSys\ReverseDiscriminator\Annotations\DiscriminatorEntry;
-use CoreSys\UserManagement\Entity\Traits\Id;
+use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Class User
  * @package CoreSys\UserManagement\Entity
- * @ORM\Entity()
- * @ORM\Table(name="cs_user", indexes={@ORM\Index(name="password_idx", columns={"password"})})
- * @ORM\InheritanceType("SINGLE_TABLE")
- * @ORM\DiscriminatorColumn(name="discr", type="string", length=32)
- * @DiscriminatorEntry("user")
  */
-class User implements UserInterface
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\Table(name: "cs_user")]
+#[ORM\Index(name: "password_idx", columns: ["password"])]
+#[ORM\InheritanceType("SINGLE_TABLE")]
+#[ORM\DiscriminatorColumn(name: "discr", type: "string", length: 32)]
+#[ORM\HasLifecycleCallbacks()]
+#[DiscriminatorEntry("user")]
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: "users", cascade: ["remove", "persist"])]
+    #[ORM\JoinTable(name: 'cs_user_roles')]
+    protected Collection|ArrayCollection $systemRoles;
+
+    #[ORM\Column(type: 'datetime')]
+    private DateTime $createdAt;
+
+    #[ORM\Column(type: 'datetime')]
+    private DateTime $updatedAt;
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $email = null;
 
     /**
-     * @var string
-     * @ORM\Column(name="id", type="integer")
-     * @ORM\Id()
-     * @ORM\GeneratedValue(strategy="AUTO")
+     * @var string The hashed password
      */
-    protected $id;
+    #[ORM\Column]
+    private ?string $password = null;
+
+    #[ORM\Column]
+    private array $roles = [];
 
     /**
-     * @var string
-     * @ORM\Column(name="email", length=128, unique=true)
+     * @var string|null plain text password for resetting
      */
-    protected $email;
+    private ?string $plainPassword = null;
 
-    /**
-     * @var string
-     * @ORM\Column(name="password", length=128)
-     */
-    protected $password;
-
-    /**
-     * @var string|null
-     */
-    protected $plainPassword;
-
-    /**
-     * @var string
-     * @ORM\Column(name="salt", length=64)
-     */
-    protected $salt;
-
-    /**
-     * @var array
-     * @ORM\Column(name="roles", type="array")
-     */
-    protected $roles;
-
-    /**
-     * @var Collection
-     * @ORM\ManyToMany(targetEntity="CoreSys\UserManagement\Entity\Role", inversedBy="users",
-     *                                                                    cascade={"remove","persist"})
-     * @ORM\JoinTable(name="cs_user_roles")
-     */
-    protected $systemRoles;
-
-    /**
-     * User constructor.
-     */
     public function __construct()
     {
-        $this->setSalt( base_convert( sha1( uniqid( mt_rand( 1, 9999999999 ) . '', TRUE ) ), 16, 36 ) );
-        $this->setRoles( [ 'ROLE_USER' ] );
+        $this->setRoles(['ROLE_USER']);
+        $this->systemRoles = new ArrayCollection();
+        $this->createdAt = new DateTime();
+        $this->updatedAt = new DateTime();
     }
 
-    /**
-     * Get Id
-     * @return string
-     */
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
-    /**
+     /**
      * Erase Credentials
      */
-    public function eraseCredentials()
+    public function eraseCredentials(): self
     {
-        $this->setPlainPassword( NULL );
+        $this->setPlainPassword(null);
 
         return $this;
     }
 
     /**
+     * Get the value of createdAt
+     *
+     * @return DateTime
+     */
+    public function getCreatedAt(): DateTime
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * Set the value of createdAt
+     *
+     * @param DateTime $createdAt
+     *
+     * @return self
+     */
+    public function setCreatedAt(DateTime $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of updatedAt
+     *
+     * @return DateTime
+     */
+    public function getUpdatedAt(): DateTime
+    {
+        return $this->updatedAt;
+    }
+
+    /**
+     * Set the value of updatedAt
+     *
+     * @param DateTime $updatedAt
+     *
+     * @return self
+     */
+    public function setUpdatedAt(DateTime $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * Get the system roles
+     *
+     * @return Collection|ArrayCollection
+     */
+    public function getSystemRoles(): Collection|ArrayCollection
+    {
+        return $this->systemRoles;
+    }
+
+    /**
+     * Set the system roles
+     *
+     * @param Collection|ArrayCollection $systemRoles
+     * @return self
+     */
+    public function setSystemRoles(Collection $systemRoles): self
+    {
+        $this->systemRoles = $systemRoles;
+
+        return $this;
+    }
+
+    /**
+     * Add a system role
+     *
+     * @param Role $systemRole
+     * @return self
+     */
+    public function addSystemRole(Role $systemRole): self
+    {
+        if (!$this->systemRoles->contains($systemRole)) {
+            $this->systemRoles->add($systemRole->addUser($this));
+            $this->addRole($systemRole->getRoleName());
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove a system role
+     *
+     * @param Role $systemRole
+     * @return self
+     */
+    public function removeSystemRole(Role $systemRole): self
+    {
+        if ($this->systemRoles->contains($systemRole)) {
+            $this->systemRoles->removeElement($systemRole->removeUser($this));
+            $this->removeRole($systemRole->getRoleName());
+        }
+
+        return $this;
+    }
+
+    /**
+     * Has a systm role by name
+     *
+     * @param string $roleName
+     * @return boolean
+     */
+    public function hasSystemRoleName(string $roleName): bool
+    {
+        $what = $this->getSystemRoles()->filter(function ($systemRole) use ($roleName) {
+            if ($systemRole->getRoleName() === $roleName) {
+                return $systemRole;
+            }
+            return false;
+        });
+
+        return $what->count() > 0;
+    }
+
+    /**
+     * Get Id
+     *
+     * @return int
+     */
+    public function getId(): int
+    {
+        return $this->id ??= 0;
+    }
+
+    /**
      * Get Password
+     *
      * @return string
      */
     public function getPassword(): string
@@ -110,10 +222,11 @@ class User implements UserInterface
 
     /**
      * Set Password
+     *
      * @param string $password
-     * @return User
+     * @return self
      */
-    public function setPassword( string $password ): User
+    public function setPassword(string $password): self
     {
         $this->password = $password;
 
@@ -122,66 +235,55 @@ class User implements UserInterface
 
     /**
      * Get Roles
+     *
      * @return array
      */
     public function getRoles(): array
     {
-        return $this->roles;
+        return array_unique(
+            array_merge(
+                ['ROLE_USER'],
+                $this->roles ??= []
+            )
+        );
     }
 
     /**
      * Set Roles
+     *
      * @param array $roles
-     * @return User
+     * @return self
      */
-    public function setRoles( array $roles ): User
+    public function setRoles(array $roles): self
     {
-        $this->roles = $roles;
+        $this->roles = array_unique(
+            array_merge(
+                ['ROLE_USER'],
+                $this->roles ??= []
+            )
+        );
+        ;
 
         return $this;
-    }
-
-    /**
-     * Get Salt
-     * @return string
-     */
-    public function getSalt(): string
-    {
-        return $this->salt;
-    }
-
-    /**
-     * Set Salt
-     * @param string $salt
-     * @return User
-     */
-    public function setSalt( string $salt ): User
-    {
-        $this->salt = $salt;
-
-        return $this;
-    }
-
-    public function getUsername(): string
-    {
-        return $this->getEmail();
     }
 
     /**
      * Get Email
+     *
      * @return string
      */
     public function getEmail(): string
     {
-        return $this->email;
+        return $this->email ??= '';
     }
 
     /**
      * Set Email
+     *
      * @param string $email
-     * @return User
+     * @return self
      */
-    public function setEmail( string $email ): User
+    public function setEmail(string $email): self
     {
         $this->email = $email;
 
@@ -192,11 +294,11 @@ class User implements UserInterface
      * Add a role to the array
      *
      * @param string $roleName
-     * @return User
+     * @return self
      */
-    public function addRole( string $roleName ): User
+    public function addRole(string $roleName): self
     {
-        if ( !in_array( $roleName = strtoupper( $roleName ), $this->roles ) ) {
+        if (!in_array($roleName = strtoupper($roleName), $this->roles)) {
             $this->roles[] = $roleName;
         }
 
@@ -207,26 +309,37 @@ class User implements UserInterface
      * Remove a role
      *
      * @param string $roleName
-     * @return User
+     * @return self
      */
-    public function removeRole( string $roleName ): User
+    public function removeRole(string $roleName): self
     {
-        if ( in_array( $roleName = strtoupper( $roleName ), $this->roles ) ) {
+        if (in_array($roleName = strtoupper($roleName), $this->roles)) {
             $roles = [];
-            foreach ( $this->roles as $role ) {
-                if ( $role !== $roleName ) {
+            foreach ($this->roles as $role) {
+                if ($role !== $roleName) {
                     $roles[] = $role;
                 }
             }
-            $this->setRoles( $roles );
+            $this->setRoles($roles);
         }
 
         return $this;
     }
 
     /**
-     * Get PlainPassword
-     * @return null|string
+     * A visual identifier that represents this user.
+     *
+     * @see UserInterface
+     */
+    public function getUserIdentifier(): string
+    {
+        return $this->getEmail();
+    }
+
+    /**
+     * Get the value of plainPassword
+     *
+     * @return ?string
      */
     public function getPlainPassword(): ?string
     {
@@ -234,15 +347,24 @@ class User implements UserInterface
     }
 
     /**
-     * Set PlainPassword
-     * @param null|string $plainPassword
-     * @return User
+     * Set the value of plainPassword
+     *
+     * @param ?string $plainPassword
+     *
+     * @return self
      */
-    public function setPlainPassword( ?string $plainPassword ): User
+    public function setPlainPassword(?string $plainPassword): self
     {
         $this->plainPassword = $plainPassword;
 
         return $this;
     }
 
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function prePersist(): void
+    {
+        $this->getCreatedAt();
+        $this->updatedAt = new DateTime();
+    }
 }
