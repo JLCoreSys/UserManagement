@@ -5,7 +5,7 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "git@bitbucket.org:jlcoresys/reverse-discriminator.git"
+      "url": "https://github.com/JLCoreSys/ReverseDiscriminatorBundle.git"
     }
   ],
   "minimum-stability": "dev",
