@@ -22,10 +22,14 @@ class AccessCompilerPass implements CompilerPassInterface
     private array $expressions = [];
     private array $requestMatchers = [];
 
-    function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container)
     {
-        $accessControl = $container->getParameter('coresys.security.access_control');
-        
+        if (!$container->hasParameter('coresys_user_management.security.access_control')) {
+            return;
+        }
+
+        $accessControl = $container->getParameter('coresys_user_management.security.access_control');
+
         foreach ($accessControl ??= [] as $access) {
             $access = array_merge([
                 'host' => null, 'port' => null, 'ips' => null,
@@ -36,7 +40,7 @@ class AccessCompilerPass implements CompilerPassInterface
 
             if (isset($access['request_matcher'])) {
                 if (
-                    $access['path'] || $access['host'] || $access['port'] || $access['ips'] 
+                    $access['path'] || $access['host'] || $access['port'] || $access['ips']
                     || $access['methods'] || $access['attributes'] || $access['route']
                 ) {
                     throw new InvalidConfigurationException(
@@ -69,7 +73,7 @@ class AccessCompilerPass implements CompilerPassInterface
                     $attributes
                 );
             }
-        
+
             $roles = $access['roles'];
             if ($access['allow_if']) {
                 $roles[] = $this->createExpression($container, $access['allow_if']);

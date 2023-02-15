@@ -26,7 +26,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\InheritanceType("SINGLE_TABLE")]
 #[ORM\DiscriminatorColumn(name: "discr", type: "string", length: 32)]
 #[ORM\HasLifecycleCallbacks()]
-#[DiscriminatorEntry("user")]
+#[DiscriminatorEntry("core")]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: "users", cascade: ["remove", "persist"])]

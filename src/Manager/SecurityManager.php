@@ -4,7 +4,7 @@
  * Author: Josh McCreight<jmccreight@shaw.ca>
  */
 
- declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace CoreSys\UserManagement\Manager;
 
@@ -17,6 +17,7 @@ use CoreSys\UserManagement\Form\UserType;
 use CoreSys\UserManagement\Form\UserUpdateType;
 use CoreSys\UserManagement\Repository\AccessRepository;
 use CoreSys\UserManagement\Repository\RoleRepository;
+use CoreSys\UserManagement\UserManagementBundle;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -28,8 +29,9 @@ class SecurityManager
 {
     use ContainerAwareTrait;
 
-    public const ROLE_FILE = 'coresys_roles.yaml';
-    public const ACCESS_FILE = 'coresys_access.yaml';
+
+    public const ROLES_PARAMETER = 'security.role_hierarchy';
+    public const ACCESS_CONTROL_PARAMETER = 'security.access_control';
 
     protected string $configurationFolder;
     protected string $env;
@@ -49,25 +51,37 @@ class SecurityManager
         string $filename,
         array $data
     ): void {
-        $message = "# This file is auto-generated. Any manual changes will be overwritten\n";
+        $message = "# parameters are auto-generated. Any manual changes will be overwritten\n";
         $fs = new Filesystem();
         $fs->dumpFile($filename, $message . Yaml::dump($data, 4));
+    }
+
+    protected function buildPath(array $pieces): string
+    {
+        return implode(DIRECTORY_SEPARATOR, $pieces ?? []);
     }
 
     public function dumpRoles(): self
     {
         $roleStructure = $this->roleRepository->getRoleDataStructure();
-        $filename = $this->configurationFolder . DIRECTORY_SEPARATOR . self::ROLE_FILE;
-        $roleData = $this->getExistingSecurityConfigurationData($filename);
-        $parameterName = 'coresys.security.role_hierarchy';
+        $filename = $this->buildPath(
+            [
+                $this->configurationFolder,
+                UserManagementBundle::PACKAGE_FILENAME
+            ]
+        );
+        $packageData = is_file($filename) ? Yaml::parse($filename) : ['parameters' => null, [UserManagementBundle::PACKAGE_NAME]];
+        $packageData['parameters'] = $packageData['parameters'] ??= [];
+
+        $parameterName = UserManagementBundle::PACKAGE_NAME . '.' . self::ROLES_PARAMETER;
 
         if ($this->env === 'prod') {
-            $roleData['parameters'][$parameterName] = $roleStructure;
+            $packageData['parameters'][$parameterName] = $roleStructure;
         } else {
-            $roleData['when@' . $this->env]['parameters'][$parameterName] = $roleStructure;
+            $packageData['when@' . $this->env]['parameters'][$parameterName] = $roleStructure;
         }
 
-        $this->dumpSecurityConfiguration($filename, $roleData);
+        $this->dumpSecurityConfiguration($filename, $packageData);
 
         return $this;
     }
@@ -75,37 +89,27 @@ class SecurityManager
     public function dumpAccess(): self
     {
         $accessStructure = $this->accessRepository->getAccessDataStructure();
-        $filename = $this->configurationFolder . DIRECTORY_SEPARATOR . self::ACCESS_FILE;
-        $accessData = $this->getExistingSecurityConfigurationData($filename);
-        $parameterName = 'coresys.security.access_control';
+        $filename = $this->buildPath(
+            [
+                $this->configurationFolder,
+                UserManagementBundle::PACKAGE_FILENAME
+            ]
+        );
+        $packageData = is_file($filename) ? Yaml::parse($filename) : ['parameters' => null, [UserManagementBundle::PACKAGE_NAME]];
+        $packageData['parameters'] = $packageData['parameters'] ??= [];
+
+        $parameterName = UserManagementBundle::PACKAGE_NAME . '.' . self::ACCESS_CONTROL_PARAMETER;
 
         if ($this->env === 'prod') {
-            $accessData['parameters'][$parameterName] = $accessStructure;
+            $packageData['parameters'][$parameterName] = $accessStructure;
         } else {
-            $accessData['when@' . $this->env]['parameters'][$parameterName] = $accessStructure;
+            $packageData['when@' . $this->env]['parameters'][$parameterName] = $accessStructure;
         }
 
-        $this->dumpSecurityConfiguration($filename, $accessData);
+        $this->dumpSecurityConfiguration($filename, $packageData);
 
         return $this;
     }
-
-    protected function getExistingSecurityConfigurationData(string $filename): array
-    {
-        $configurationData = is_file($filename) ? Yaml::parse(file_get_contents($filename)) : [];
-        $configurationData['parameters'] ??= [];
-
-        foreach (['dev', 'test'] as $which) {
-            if (!isset($configurationData[$whenKey = 'when@' . $which])) {
-                $configurationData[$whenKey] = ['parameters' => []];
-            } elseif (!isset($configurationData[$whenKey]['parameters'])) {
-                $configurationData[$whenKey]['parameters'] = [];
-            }
-        }
-
-        return $configurationData;
-    }
-
 
     public function getUserForm(?User $user = null, array $options = []): FormInterface
     {

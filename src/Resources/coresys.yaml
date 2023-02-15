@@ -1,3 +1,7 @@
+parameters:
+  coresys_user_management.security.role_hierarchy: []
+  coresys_user_management.security.access_control: []
+
 user_management:
   fixtures:
     users:
